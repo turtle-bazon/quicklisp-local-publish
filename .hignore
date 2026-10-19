@@ -1,0 +1,4 @@
+build/
+*.fasl
+*.dx64fsl
+*.lx64fsl
