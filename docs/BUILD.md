@@ -95,6 +95,12 @@ so the shipped binary keeps an old glibc floor — glibc is only
 forward-compatible, and a binary built on a new distribution will not run
 on an old one.
 
+That image is Debian 11, which is archived now, so the workflow points apt
+at `archive.debian.org` instead of `deb.debian.org`: the latter has already
+dropped bullseye's security suite and answers 404 for everything asked of
+it. The archived `Release` carries no `Valid-Until`, so no expiry check has
+to be disabled either.
+
 The build job does not stop at `--version` and `--help`: its last step
 writes a one-project fixture, publishes it, verifies it, and checks that
 both the literal system and a macro-generated sub-system reached

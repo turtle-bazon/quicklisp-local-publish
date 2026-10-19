@@ -25,12 +25,15 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           bash -euxo pipefail <<'EOF'
-          # The sbcl-bullseye image may ship a stale/incomplete apt index;
-          # restore a valid bullseye sources.list and refetch.
-          rm -rf /var/lib/apt/lists/*
-          echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list
-          echo "deb http://deb.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
-          echo "deb http://deb.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list
+          # Bullseye is archived: deb.debian.org no longer serves its
+          # security suite, so every package asked of it answers 404.
+          # The image must stay on bullseye - it is what pins the glibc
+          # floor of the binary, and a build on a newer release would not
+          # run on older systems - so ask the archive that keeps old
+          # releases instead. Its Release carries no Valid-Until, so
+          # nothing has to be told to ignore an expiry date.
+          rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/*
+          echo "deb http://archive.debian.org/debian bullseye main" > /etc/apt/sources.list
           apt-get update -o Acquire::Retries=5
           # qlp shells out to tar and gzip to build release archives.
           apt-get install -y --no-install-recommends git make tar gzip
