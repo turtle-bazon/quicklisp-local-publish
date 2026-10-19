@@ -1,0 +1,185 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux: build inside the old-glibc SBCL image so the binary runs
+          # on older distributions (glibc is only forward-compatible).
+          - os: ubuntu-latest
+            container: ghcr.io/turtle-bazon/sbcl-bullseye-build/sbcl-bullseye:latest
+            artifact: qlp-linux-x86_64
+          - os: macos-latest
+            artifact: qlp-macos
+    steps:
+      - name: Install system deps (Linux container)
+        if: runner.os == 'Linux'
+        run: |
+          bash -euxo pipefail <<'EOF'
+          # The sbcl-bullseye image may ship a stale/incomplete apt index;
+          # restore a valid bullseye sources.list and refetch.
+          rm -rf /var/lib/apt/lists/*
+          echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list
+          echo "deb http://deb.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+          echo "deb http://deb.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list
+          apt-get update -o Acquire::Retries=5
+          # qlp shells out to tar and gzip to build release archives.
+          apt-get install -y --no-install-recommends git make tar gzip
+          EOF
+
+      - uses: actions/checkout@v4
+
+      - name: Install system deps (macOS)
+        if: runner.os == 'macOS'
+        # gnu-tar, not the tar macOS ships: an archive is built with
+        # --format=gnu, --transform and --numeric-owner, none of which
+        # bsdtar has in the form qlp passes them.
+        run: brew install sbcl gnu-tar
+
+      - name: Set up Quicklisp
+        shell: bash
+        run: |
+          curl -fsSL https://beta.quicklisp.org/quicklisp.lisp -o "$RUNNER_TEMP/quicklisp.lisp"
+          sbcl --non-interactive --load "$RUNNER_TEMP/quicklisp.lisp" \
+            --eval '(quicklisp-quickstart:install)'
+          echo '(load "~/quicklisp/setup.lisp")' >> "$HOME/.sbclrc"
+          # Make ASDF find qlp.asd in the checkout (cwd).
+          echo '(push *default-pathname-defaults* asdf:*central-registry*)' >> "$HOME/.sbclrc"
+
+      - name: Build
+        shell: bash
+        run: make build
+
+      - name: Check glibc floor (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          echo "build/qlp required GLIBC: $(objdump -T build/qlp | grep -o 'GLIBC_[0-9.]*' | sort -V | uniq | tail -1)"
+          ldd build/qlp
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          build/qlp --version
+          build/qlp --help
+
+      - name: Publish a distribution end to end
+        shell: bash
+        run: |
+          bash -euxo pipefail <<'EOF'
+          # Prefer gtar, which is what macOS's gnu-tar is called.
+          TAR_PROGRAM="$(command -v gtar || command -v tar)"
+          "$TAR_PROGRAM" --version | head -1
+
+          ROOT="$RUNNER_TEMP/qlp-smoke"
+          mkdir -p "$ROOT/projects/hello"
+          cat > "$ROOT/projects/hello/hello.asd" <<'ASD'
+          (defsystem "hello"
+            :description "A project CI publishes to prove qlp works."
+            :components ((:file "hello")))
+
+          ;;; A sub-system the way the interesting .asd files declare one:
+          ;;; not as a second literal defsystem, but through a macro.
+          (defmacro def-hello-subsystem (name)
+            `(defsystem ,name :depends-on ("hello") :components ((:file "hello"))))
+
+          (def-hello-subsystem "hello/extra")
+          ASD
+          printf '%s\n' '(defpackage :hello (:use :cl))' '(in-package :hello)' \
+            '(defun greet () "hello")' > "$ROOT/projects/hello/hello.lisp"
+
+          build/qlp publish --name smoke \
+            --base-url https://example.org/dist \
+            --projects-dir "$ROOT/projects" \
+            --dists-dir "$ROOT/dists" \
+            --tar-program "$TAR_PROGRAM"
+
+          build/qlp verify --name smoke \
+            --base-url https://example.org/dist \
+            --projects-dir "$ROOT/projects" \
+            --dists-dir "$ROOT/dists"
+
+          # Both the system an .asd file names and the one its macro
+          # expands into end up in the index, and the archive is not empty.
+          grep -q '^hello hello.asd hello$' "$ROOT"/dists/smoke/*/systems.txt
+          grep -q '^hello hello.asd hello/extra ' "$ROOT"/dists/smoke/*/systems.txt
+          test -s "$ROOT"/dists/smoke/archive/hello-*.tgz
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: build/qlp
+          if-no-files-found: error
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps
+        shell: bash
+        run: |
+          sudo apt-get update -o Acquire::Retries=5
+          sudo apt-get install -y --no-install-recommends git make sbcl tar gzip
+
+      - name: Set up Quicklisp
+        shell: bash
+        run: |
+          curl -fsSL https://beta.quicklisp.org/quicklisp.lisp -o "$RUNNER_TEMP/quicklisp.lisp"
+          sbcl --non-interactive --load "$RUNNER_TEMP/quicklisp.lisp" \
+            --eval '(quicklisp-quickstart:install)'
+          echo '(load "~/quicklisp/setup.lisp")' >> "$HOME/.sbclrc"
+          echo '(push *default-pathname-defaults* asdf:*central-registry*)' >> "$HOME/.sbclrc"
+
+      - name: Test
+        shell: bash
+        run: make tests
+
+  release:
+    needs: [build, test]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: qlp-linux-x86_64
+          path: linux
+
+      - name: Download macOS binary
+        uses: actions/download-artifact@v4
+        with:
+          name: qlp-macos
+          path: macos
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          mkdir -p release-assets
+          cp linux/qlp release-assets/qlp-linux-x86_64
+          cp macos/qlp release-assets/qlp-macos
+          ls -laR release-assets
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --clobber
+          else
+            gh release create "$TAG" release-assets/* \
+              --title "qlp $TAG" \
+              --notes "Built by CI from tag $TAG."
+          fi

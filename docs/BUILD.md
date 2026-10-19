@@ -79,6 +79,35 @@ Two that catch people out:
   `mapcar` or `maphash`;
 - no function longer than 50 lines.
 
+## Continuous Integration
+
+`.github/workflows/build.yml` runs three jobs on every push and pull
+request:
+
+| Job | Runs on | Does |
+|-----|---------|------|
+| `build` | Linux (old-glibc SBCL container) and macOS | `make build`, glibc floor check, smoke test, uploads `build/qlp` |
+| `test` | plain `ubuntu-latest` | `make tests` |
+| `release` | on a tag only | publishes both binaries with `gh release create` |
+
+The Linux build runs inside `ghcr.io/turtle-bazon/sbcl-bullseye-build/sbcl-bullseye`
+so the shipped binary keeps an old glibc floor — glibc is only
+forward-compatible, and a binary built on a new distribution will not run
+on an old one.
+
+The build job does not stop at `--version` and `--help`: its last step
+writes a one-project fixture, publishes it, verifies it, and checks that
+both the literal system and a macro-generated sub-system reached
+`systems.txt`. That is the feature the tool exists for, so CI exercises it
+on both platforms.
+
+### macOS and `tar`
+
+Archives are built with `--format=gnu`, `--transform` and
+`--numeric-owner`, which macOS's `bsdtar` does not have in the form `qlp`
+passes them. CI installs `gnu-tar` through Homebrew and passes
+`--tar-program gtar`. The same applies to running `qlp` by hand on macOS.
+
 ## Gotcha: Stale FASLs
 
 ASDF caches compiled files under `~/.cache/common-lisp/`. It recompiles
