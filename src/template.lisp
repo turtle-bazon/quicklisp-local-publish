@@ -18,7 +18,7 @@
 (in-package :qlp)
 
 ;;; Layout templates. The placeholders are read as Common Lisp forms, so
-;;; {name} is the symbol NAME and {(:or version :today)} is a form.
+;;; {name} is the symbol NAME and {(:or version "19700101")} is a form.
 
 (defparameter *distinfo-template*
   "name: {name}

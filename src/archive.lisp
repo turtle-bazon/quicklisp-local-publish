@@ -44,11 +44,18 @@
   (systems '() :type list))
 
 (defun format-date (universal-time)
-  "Format UNIVERSAL-TIME as YYYYMMDD."
+  "Format UNIVERSAL-TIME as YYYYMMDD, in UTC."
   (multiple-value-bind (second minute hour day month year)
-      (decode-universal-time universal-time)
+      (decode-universal-time universal-time 0)
     (declare (ignore second minute hour))
     (format nil "~4,'0d~2,'0d~2,'0d" year month day)))
+
+(defun format-timestamp (universal-time)
+  "Format UNIVERSAL-TIME as YYYYMMDDHHMMSS, in UTC."
+  (multiple-value-bind (second minute hour day month year)
+      (decode-universal-time universal-time 0)
+    (format nil "~4,'0d~2,'0d~2,'0d~2,'0d~2,'0d~2,'0d"
+            year month day hour minute second)))
 
 (defun effective-mtime (root exclude)
   "Return the newest modification time under ROOT as a universal time."

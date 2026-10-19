@@ -24,7 +24,7 @@
   (list (clingon:make-option :string :long-name "name" :key :name
                              :description "Name of the distribution")
         (clingon:make-option :string :long-name "dist-version" :key :version
-                             :description "Version of the distribution (default: today's date)")
+                             :description "Version of the distribution (default: the current UTC timestamp)")
         (clingon:make-option :string :long-name "base-url" :key :base-url
                              :description "URL the distribution will be served from")
         (clingon:make-option :filepath :long-name "projects-dir" :key :projects-dir

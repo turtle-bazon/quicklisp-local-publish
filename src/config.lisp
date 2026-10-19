@@ -43,7 +43,7 @@ that supplies it.")
 Nothing is checked here: PUBLISH and VERIFY-DIST validate, so that a
 configuration assembled from a command line is checked once, as a whole."
   (list :name name
-        :version (or version :today)
+        :version (or version :now)
         :base-url base-url
         :projects-dir projects-dir
         :dists-dir dists-dir
@@ -55,7 +55,7 @@ configuration assembled from a command line is checked once, as a whole."
   (getf config :name))
 
 (defun config-version (config)
-  "Return the distribution version of CONFIG, a string or :TODAY."
+  "Return the distribution version of CONFIG, a string or :NOW."
   (getf config :version))
 
 (defun config-base-url (config)
@@ -85,7 +85,7 @@ configuration assembled from a command line is checked once, as a whole."
           (error "Missing required option ~a." option))
         (when (string= "" (getf config field))
           (error "Option ~a may not be empty." option)))
-  (unless (eq :today (config-version config))
+  (unless (eq :now (config-version config))
     (unless (stringp (config-version config))
       (error "Option --dist-version must be a string or omitted")))
   config)

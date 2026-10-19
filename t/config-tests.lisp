@@ -40,11 +40,11 @@
   (handler-case (progn (funcall thunk) nil)
     (error (condition) (princ-to-string condition))))
 
-(test config-defaults-to-today-and-the-standard-exclusions
+(test config-defaults-to-now-and-the-standard-exclusions
   "A configuration built from nothing needs a version no more than a list
 of its own of what to leave out."
   (let ((config (qlp:make-config)))
-    (is (eq :today (qlp:config-version config)))
+    (is (eq :now (qlp:config-version config)))
     (is (equal qlp::*default-exclude* (qlp:config-exclude config)))
     (is (equal "tar" (qlp:config-tar-program config)))))
 
@@ -63,8 +63,8 @@ of its own of what to leave out."
                                "--base-url" "http://x"
                                "--projects-dir" "/tmp/p/"
                                "--dists-dir" "/tmp/d/")))
-    (is (eq :today (qlp:config-version config))
-        "no --dist-version means today's date")
+    (is (eq :now (qlp:config-version config))
+        "no --dist-version means the current time")
     (is (equal "tar" (qlp:config-tar-program config)))
     (is (equal qlp::*default-exclude* (qlp:config-exclude config)))))
 
@@ -110,7 +110,7 @@ so that a configuration built as a library value is checked the same."
   (let ((config (parsed-config "--name" "conf" "--base-url" "http://x"
                                "--projects-dir" "/tmp/p/"
                                "--dists-dir" "/tmp/d/")))
-    (is (eq :today (qlp:config-version config)))
+    (is (eq :now (qlp:config-version config)))
     (is (qlp::validate-config config))))
 
 (test config-rejects-a-version-that-is-not-a-name

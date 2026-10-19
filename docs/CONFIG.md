@@ -33,7 +33,7 @@ An option given as the empty string is refused just the same.
 
 | Option | Default | Meaning |
 |--------|---------|---------|
-| `--dist-version VERSION` | today's date as `YYYYMMDD` | version of this publication |
+| `--dist-version VERSION` | the current UTC timestamp as `YYYYMMDDHHMMSS` | version of this publication |
 | `--tar-program PATH` | `tar` | GNU tar to run |
 | `--exclude PATTERN` | see below | name or pattern kept out of the archives; repeatable |
 | `--yes` | — | `qlp clean` only; without it nothing is removed |
@@ -89,7 +89,7 @@ qlp systems  --name local --base-url https://lisp.example.org/dist \
 
 qlp clean --yes --name local --base-url https://lisp.example.org/dist \
           --projects-dir /srv/lisp/projects --dists-dir /srv/www/dist \
-          --dist-version 20261019
+          --dist-version 20261019233007
 ```
 
 The same four options repeat because each invocation stands alone — which

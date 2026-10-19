@@ -144,7 +144,7 @@ familiar: `*distinfo-template*`, `*distinfo-file-template*`,
 All are exported and may be rebound to change the layout.
 
 `{name}` reads as the symbol `NAME`; a placeholder may also be a form,
-`{(:or version :today)}`, in which case `(:or …)` takes the first key the
+`{(:or version "19700101")}`, in which case `(:or …)` takes the first key the
 data supplies and `(:if …)` picks between two. Reading uses a copy
 readtable in which `}` closes the form, with `*package*` bound to
 `:keyword`.

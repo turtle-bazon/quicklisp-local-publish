@@ -14,6 +14,7 @@
                              (:file "template-tests")
                              (:file "config-tests")
                              (:file "paths-tests")
+                             (:file "archive-tests")
                              (:file "asdf-scan-tests")
                              (:file "index-tests")
                              (:file "publish-tests")))))

@@ -18,11 +18,11 @@ qlp publish --name mydist \
 That writes, under `/srv/www/dist`:
 
 ```
-mydist.txt                                   the distinfo a client subscribes to
-mydist/20261019/distinfo.txt                 the same, inside the version directory
-mydist/20261019/releases.txt                 one line per release
-mydist/20261019/systems.txt                  one line per system
-mydist/archive/somepackage-20261019.tgz      the archives those lines point at
+mydist.txt                                     the distinfo a client subscribes to
+mydist/20261019233007/distinfo.txt             the same, inside the version directory
+mydist/20261019233007/releases.txt             one line per release
+mydist/20261019233007/systems.txt              one line per system
+mydist/archive/somepackage-20261019233007.tgz  the archives those lines point at
 ```
 
 ## Serving and subscribing
@@ -31,11 +31,11 @@ mydist/archive/somepackage-20261019.tgz      the archives those lines point at
 any static file server — every file's URL is just its path under that root:
 
 ```
-https://dist.example.org/mydist.txt                              subscribe here
-https://dist.example.org/mydist/20261019/distinfo.txt            the same distinfo
-https://dist.example.org/mydist/20261019/releases.txt
-https://dist.example.org/mydist/20261019/systems.txt
-https://dist.example.org/mydist/archive/somepackage-20261019.tgz
+https://dist.example.org/mydist.txt                                subscribe here
+https://dist.example.org/mydist/20261019233007/distinfo.txt        the same distinfo
+https://dist.example.org/mydist/20261019233007/releases.txt
+https://dist.example.org/mydist/20261019233007/systems.txt
+https://dist.example.org/mydist/archive/somepackage-20261019233007.tgz
 ```
 
 `mydist.txt` is the one a client subscribes to, and the
@@ -44,10 +44,10 @@ under the version directory is byte-identical):
 
 ```
 name: mydist
-version: 20261019
+version: 20261019233007
 distinfo-subscription-url: https://dist.example.org/mydist.txt
-release-index-url: https://dist.example.org/mydist/20261019/releases.txt
-system-index-url: https://dist.example.org/mydist/20261019/systems.txt
+release-index-url: https://dist.example.org/mydist/20261019233007/releases.txt
+system-index-url: https://dist.example.org/mydist/20261019233007/systems.txt
 ```
 
 Subscribe with the Quicklisp client:

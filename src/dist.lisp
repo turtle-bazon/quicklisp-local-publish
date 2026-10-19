@@ -38,9 +38,9 @@
   (dist-publish-report-skipped report))
 
 (defun resolve-version (version)
-  "Return VERSION as a string, resolving :TODAY to today's date."
-  (if (eq version :today)
-      (format-date (get-universal-time))
+  "Return VERSION as a string, resolving :NOW to the current UTC timestamp."
+  (if (eq version :now)
+      (format-timestamp (get-universal-time))
       version))
 
 (defun template-data (config version)
