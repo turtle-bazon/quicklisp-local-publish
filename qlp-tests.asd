@@ -5,7 +5,6 @@
 (defsystem "qlp-tests"
   :name "qlp-tests"
   :license "GPL-3.0-or-later"
-  :version "0.0.1.0"
   :description "Tests for qlp"
   :depends-on ("qlp" "fiveam")
   :serial t

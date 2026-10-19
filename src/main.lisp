@@ -65,11 +65,15 @@ system's .asd file are listed as systems of their own."
                                                :description "Confirm the removal")))
    :handler (guarded-handler #'run-clean)))
 
+(defun qlp-version ()
+  "Return the version declared in qlp.asd, the one place it is written."
+  (asdf:component-version (asdf:find-system "qlp")))
+
 (defun qlp-command ()
   "Return the top level qlp command."
   (clingon:make-command
    :name "qlp"
-   :version "0.0.1.0"
+   :version (qlp-version)
    :description "Publish local Common Lisp projects as a Quicklisp distribution"
    :long-description "qlp turns a directory of local projects into a Quicklisp
 distribution: reproducible release archives, a release index, a system index and
