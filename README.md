@@ -18,28 +18,59 @@ qlp publish --name mydist \
 That writes, under `/srv/www/dist`:
 
 ```
-mydist.txt                                  distinfo, for quicklisp-client:dist
+mydist.txt                                   the distinfo a client subscribes to
 mydist/20261019/distinfo.txt                 the same, inside the version directory
 mydist/20261019/releases.txt                 one line per release
 mydist/20261019/systems.txt                  one line per system
-mydist/archive/ironclad-20261019.tgz         the archives those lines point at
+mydist/archive/somepackage-20261019.tgz      the archives those lines point at
 ```
 
-Copy `/srv/www/dist` to a web root and subscribe with:
+## Serving and subscribing
+
+`--dists-dir` is an ordinary directory tree, so serve it at `--base-url` with
+any static file server — every file's URL is just its path under that root:
+
+```
+https://dist.example.org/mydist.txt                              subscribe here
+https://dist.example.org/mydist/20261019/distinfo.txt            the same distinfo
+https://dist.example.org/mydist/20261019/releases.txt
+https://dist.example.org/mydist/20261019/systems.txt
+https://dist.example.org/mydist/archive/somepackage-20261019.tgz
+```
+
+`mydist.txt` is the one a client subscribes to, and the
+`distinfo-subscription-url` field inside it names that very file (the copy
+under the version directory is byte-identical):
+
+```
+name: mydist
+version: 20261019
+distinfo-subscription-url: https://dist.example.org/mydist.txt
+release-index-url: https://dist.example.org/mydist/20261019/releases.txt
+system-index-url: https://dist.example.org/mydist/20261019/systems.txt
+```
+
+Subscribe with the Quicklisp client:
 
 ```lisp
-(ql:quickload "quicklisp-client" :silent t)
-(ql:quickload "mydist" :silent t)   ; after registering the dist
+(ql-dist:install-dist "https://dist.example.org/mydist.txt" :prompt nil)
+(ql:quickload "somepackage")
+```
+
+The client keeps the URL it subscribed from, so once you publish again:
+
+```lisp
+(ql:update-all-dists :prompt nil)
 ```
 
 ## Why sub-systems
 
-A file such as `ironclad.asd` defines `ironclad` *and* a couple of dozen
-systems under `ironclad/`. Quicklisp indexes them only when a project's
-`.asd` files are read the way ASDF reads them, so `qlp` reads them that way:
-it evaluates each `.asd` file with ASDF's own registration hooked, records
-every `defsystem` it sees, and then puts ASDF back the way it found it.
-Systems that macro helpers expand into are caught too, because what is
+A file such as `somepackage.asd` may define `somepackage` *and* a couple of
+dozen more systems under `somepackage/`. Quicklisp indexes them only when a
+project's `.asd` files are read the way ASDF reads them, so `qlp` reads them
+that way: it evaluates each `.asd` file with ASDF's own registration hooked,
+records every `defsystem` it sees, and then puts ASDF back the way it found
+it. Systems that macro helpers expand into are caught too, because what is
 recorded is what ASDF registers, not what the file literally says.
 
 ## Commands
