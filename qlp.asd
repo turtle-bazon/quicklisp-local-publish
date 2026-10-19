@@ -5,7 +5,7 @@
 (defsystem "qlp"
   :name "qlp"
   :license "GPL-3.0-or-later"
-  :version "0.0.1.0"
+  :version "0.0.1.1"
   :description "Publish local Common Lisp projects as a Quicklisp distribution"
   :author "Azamat S. Kalimoulline <turtle@bazon.ru>"
   :depends-on ("uiop"
